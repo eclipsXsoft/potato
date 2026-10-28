@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Potato Tycoon</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--m:rgba(255,255,255,.62);--glass:rgba(255,255,255,.09);--line:rgba(255,255,255,.17)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;overflow:hidden;font-family:-apple-system,"SF Pro Rounded",Roboto,system-ui,sans-serif;color:#fff;background:#120d2b}
+body{background:radial-gradient(120% 70% at 15% 0%,#5a2fa8 0%,transparent 55%),radial-gradient(90% 60% at 100% 100%,#0d8a7a 0%,transparent 55%),linear-gradient(160deg,#1b1440,#0b1230);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.glass{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);box-shadow:0 8px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.18)}
+header{display:flex;gap:10px;padding:12px 14px 6px}
+.pill{border-radius:18px;padding:9px 14px;flex:1}
+.pill b{font-size:20px;display:block;letter-spacing:.2px}
+.pill small{color:var(--m);font-size:12px}
+main{flex:1;overflow:hidden;position:relative}
+.view{position:absolute;inset:0;padding:8px 14px 14px;overflow-y:auto;display:none}
+.view.on{display:flex;flex-direction:column}
+#slots{flex:1;display:grid;gap:12px;min-height:0}
+.slot{position:relative;border-radius:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;touch-action:manipulation;overflow:hidden;transition:transform .08s}
+.slot:active{transform:scale(.97)}
+.pot{font-size:clamp(64px,18vh,120px);line-height:1;transition:transform .08s;filter:drop-shadow(0 10px 14px rgba(0,0,0,.35))}
+.slot:active .pot{transform:scale(.88) rotate(-5deg)}
+.tag{font-size:13px;font-weight:700;color:var(--m)}
+.bar{width:68%;height:9px;border-radius:9px;background:rgba(0,0,0,.35);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,#7cf29a,#f6e65b)}
+.r-g{border-color:#ffd24a;box-shadow:0 0 30px rgba(255,200,60,.35),inset 0 0 40px rgba(255,200,60,.12)}
+.r-g .pot{filter:sepia(1) saturate(6) hue-rotate(-8deg) brightness(1.15) drop-shadow(0 0 18px #ffc83a)}.r-g .tag{color:#ffd24a}
+.r-d{border-color:#6eeaff;box-shadow:0 0 34px rgba(90,230,255,.4),inset 0 0 40px rgba(90,230,255,.14)}
+.r-d .pot{filter:sepia(1) saturate(4) hue-rotate(155deg) brightness(1.5) drop-shadow(0 0 20px #5ee7ff)}.r-d .tag{color:#7ff0ff}
+.r-r{border-color:#fff;animation:rg 3s linear infinite}
+.r-r .pot{animation:rb 3s linear infinite}.r-r .tag{color:#fff}
+@keyframes rb{from{filter:sepia(1) saturate(8) hue-rotate(0) drop-shadow(0 0 22px #fff)}to{filter:sepia(1) saturate(8) hue-rotate(360deg) drop-shadow(0 0 22px #fff)}}
+@keyframes rg{from{box-shadow:0 0 36px #ff4d6d,inset 0 0 40px rgba(255,77,109,.2)}33%{box-shadow:0 0 36px #ffe14d,inset 0 0 40px rgba(255,225,77,.2)}66%{box-shadow:0 0 36px #4dd5ff,inset 0 0 40px rgba(77,213,255,.2)}to{box-shadow:0 0 36px #ff4d6d,inset 0 0 40px rgba(255,77,109,.2)}}
+#combo{margin-top:10px;border-radius:16px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+#combo .bar{flex:1;width:auto}#combo .bar i{background:linear-gradient(90deg,#ff9f43,#ff4d6d)}
+.card{border-radius:22px;padding:12px;display:flex;gap:12px;align-items:center;margin-bottom:10px}
+.ico{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-size:28px;background:linear-gradient(145deg,rgba(255,255,255,.22),rgba(255,255,255,.04));border:1px solid var(--line)}
+.card .tx{flex:1;min-width:0}.card .tx b{font-size:15px}.card .tx div{font-size:12px;color:var(--m);margin-top:2px}
+.btn{border:1px solid var(--line);color:#fff;font-weight:700;font-size:14px;padding:10px 14px;border-radius:15px;background:linear-gradient(145deg,rgba(255,255,255,.2),rgba(255,255,255,.07));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 4px 14px rgba(0,0,0,.25);min-width:92px;transition:transform .08s}
+.btn:active{transform:scale(.94)}.btn.ok{background:linear-gradient(145deg,rgba(124,242,154,.5),rgba(40,180,120,.3))}.btn:disabled{opacity:.45}
+h3{margin:12px 2px 8px;font-size:15px;color:var(--m);font-weight:600}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat .card{flex-direction:column;align-items:flex-start;gap:2px;margin:0}.stat b{font-size:20px}.stat small{color:var(--m)}
+nav{display:flex;gap:8px;margin:0 14px 10px;padding:7px;border-radius:24px}
+nav button{flex:1;border:0;background:none;color:var(--m);font-size:12px;font-weight:600;padding:8px 0;border-radius:18px;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button span{font-size:20px}nav button.on{color:#fff;background:linear-gradient(145deg,rgba(255,255,255,.24),rgba(255,255,255,.08));box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.fl{position:fixed;pointer-events:none;font-weight:800;font-size:22px;text-shadow:0 2px 8px rgba(0,0,0,.5);animation:up .8s ease-out forwards;z-index:9}
+@keyframes up{to{transform:translateY(-70px);opacity:0}}
+.sp{position:fixed;pointer-events:none;font-size:20px;z-index:9;animation:sp .9s ease-out forwards}
+@keyframes sp{to{transform:translate(var(--x),var(--y)) scale(.3);opacity:0}}
+#toast{position:fixed;top:calc(env(safe-area-inset-top) + 70px);left:50%;transform:translate(-50%,-30px);opacity:0;border-radius:18px;padding:10px 16px;font-weight:700;font-size:14px;transition:.3s;z-index:20;text-align:center;max-width:90%}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media(prefers-reduced-motion:reduce){.r-r,.r-r .pot{animation:none}}
+
+nav{gap:4px}nav button{font-size:10.5px}.btn{display:inline-flex;gap:5px;align-items:center;justify-content:center}.ico svg{color:#fff}
+.tag{display:flex;align-items:center;gap:5px}
+.r-f{border-color:#ff7a2a;box-shadow:0 0 34px rgba(255,110,30,.45),inset 0 0 40px rgba(255,110,30,.18)}
+@keyframes fl{to{transform:scale(1.05) translateY(-3px)}}
+.r-h{border-color:#aab4ff;box-shadow:0 0 34px rgba(170,180,255,.4),inset 0 0 40px rgba(170,180,255,.16)}
+@keyframes fo{to{transform:translateY(-10px);opacity:.55}}
+.r-c{border-color:#8a6bff;box-shadow:0 0 38px rgba(130,100,255,.5),inset 0 0 40px rgba(130,100,255,.2);background-image:radial-gradient(circle at 18% 28%,#fff 0 1px,transparent 2px),radial-gradient(circle at 80% 70%,#fff 0 1px,transparent 2px),radial-gradient(circle at 60% 20%,#9ff 0 1px,transparent 2px)}
+.r-f .pot{filter:sepia(1) saturate(8) hue-rotate(-35deg) brightness(1.1) drop-shadow(0 0 20px #ff6a1a);animation:fl .7s ease-in-out infinite alternate}
+.r-h .pot{filter:grayscale(1) brightness(1.7) drop-shadow(0 0 20px #a8b4ff);animation:fo 2.4s ease-in-out infinite alternate}
+.r-c .pot{filter:sepia(1) saturate(5) hue-rotate(225deg) brightness(.95) drop-shadow(0 0 22px #8a6bff)}
+.r-f .tag{color:#ff9a4d}.r-h .tag{color:#c9d2ff}.r-c .tag{color:#b79cff}
+.planet{width:100%;max-height:42vh;filter:drop-shadow(0 0 24px rgba(90,200,255,.45))}.node{cursor:pointer}
+#v4{background-image:radial-gradient(circle at 12% 20%,#fff 0 1px,transparent 2px),radial-gradient(circle at 88% 12%,#fff 0 1px,transparent 2px),radial-gradient(circle at 75% 85%,#fff 0 1px,transparent 2px)}
+</style></head><body>
+<header>
+ <div class="pill glass"><small>Монеты</small><b id="coins">0</b></div>
+ <div class="pill glass"><small>Авто, в сек</small><b id="dps">0</b></div>
+</header>
+<main>
+ <section class="view on" id="v0"><div id="slots"></div>
+  <div id="combo" class="glass"><span id="cl">Комбо ×1.0</span><div class="bar"><i id="cb"></i></div></div></section>
+ <section class="view" id="v1"></section>
+ <section class="view" id="v2"></section>
+ <section class="view" id="v3"></section>
+ <section class="view" id="v4"></section>
+</main>
+<nav class="glass">
+ <button class="on" data-v="0"><span data-ic="peel"></span>Чистка</button>
+ <button data-v="1"><span data-ic="knife"></span>Улучшения</button>
+ <button data-v="3"><span data-ic="factory"></span>Завод</button>
+ <button data-v="4"><span data-ic="globe"></span>Карта</button>
+ <button data-v="2"><span data-ic="stats"></span>Статистика</button>
+</nav>
+<div id="toast" class="glass"></div>
+<script>
+const tg=window.Telegram&&Telegram.WebApp;if(tg){tg.ready();tg.expand();try{tg.setHeaderColor('#1b1440');tg.setBackgroundColor('#120d2b')}catch(e){}}
+const hap=t=>{try{tg.HapticFeedback.impactOccurred(t)}catch(e){}};
+const $=id=>document.getElementById(id);
+const R={n:{t:'Обычная',m:1,h:1,i:'peel'},g:{t:'Золотая',m:4,h:1.5,i:'star'},d:{t:'Алмазная',m:20,h:2,i:'diamond'},r:{t:'Радужная',m:100,h:3,i:'rainbow'},f:{t:'Огненная',m:300,h:3.5,i:'flame'},h:{t:'Призрачная',m:800,h:4,i:'ghost'},c:{t:'Космическая',m:3000,h:5,i:'planet'}};
+const U={
+ power:{n:'Острый нож',i:'knife',b:12,g:1.45,max:99,d:l=>`Урон за тап: ${pw(l).toFixed(1)} → ${pw(l+1).toFixed(1)}`},
+ value:{n:'Цена картошки',i:'coin',b:50,g:1.5,max:99,d:l=>`Монет за обычную: ${vl(l)} → ${vl(l+1)}`},
+ slots:{n:'Большая корзина',i:'basket',b:150,g:2.4,max:5,d:l=>`Картошек за раз: ${1+l} → ${2+l}`},
+ helper:{n:'Помощник',i:'user',b:80,g:1.5,max:99,d:l=>`Автоурон: ${l*2} → ${l*2+2} в сек`},
+ machine:{n:'Чистильная машина',i:'gear',b:1500,g:1.6,max:99,d:l=>`Автоурон: +${l*10} → +${l*10+10} в сек`},
+ luck:{n:'Нюх на удачу',i:'clover',b:200,g:1.55,max:25,d:l=>`Шанс редкой: ×${(1+l*.12).toFixed(2)} → ×${(1+(l+1)*.12).toFixed(2)}`}
+};
+const pw=l=>1+l*1.2,vl=l=>Math.round(2*(1+l*.4));
+const fresh=()=>({coins:0,total:0,peeled:0,prest:0,lv:{power:0,value:0,slots:0,helper:0,machine:0,luck:0},found:{g:0,d:0,r:0,f:0,h:0,c:0},stock:0,ln:{chips:0,fries:0,wedge:0,box:0},belt:0,work:0,wh:0,city:{},t:Date.now()});
+let S=fresh();
+try{const j=localStorage.getItem('pt');if(j)S=Object.assign(fresh(),JSON.parse(j))}catch(e){}
+const cm=()=>1+S.prest*.5,dpsOf=()=>S.lv.helper*2+S.lv.machine*10,luck=()=>1+S.lv.luck*.12;
+const cost=k=>Math.floor(U[k].b*Math.pow(U[k].g,S.lv[k]));
+const f=n=>{n=Math.floor(n);const u=['','K','M','B','T','Qa'];let i=0;while(n>=1000&&i<5){n/=1000;i++}return(i?n.toFixed(n<10?2:1):n)+u[i]};
+let P=[],combo=0,last=0,tab=0;
+function fit(){const n=1+S.lv.slots;while(P.length<n)P.push(roll());P.length=n;draw()}
+function bar(i){const e=$('slots').children[i];if(e)e.querySelector('i').style.width=(100-100*P[i].hp/P[i].mx)+'%'}
+function pop(x,y,txt,col){const d=document.createElement('div');d.className='fl';d.textContent=txt;d.style.cssText=`left:${x-20}px;top:${y-20}px;color:${col||'#fff'}`;document.body.appendChild(d);setTimeout(()=>d.remove(),800)}
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2200)}
+function tap(i,e){const now=Date.now();combo=now-last<1200?combo+1:1;last=now;hit(i,pw(S.lv.power),e.clientX,e.clientY);hap('light')}
+$('slots').addEventListener('pointerdown',e=>{const s=e.target.closest('.slot');if(s)tap(+s.dataset.i,e)});
+setInterval(()=>{const d=dpsOf();if(d&&P.length)hit(Math.floor(Math.random()*P.length),d/10);
+ if(Date.now()-last>1200)combo=0;
+ const m=1+Math.min(combo,50)*.02;$('cl').textContent='Комбо ×'+m.toFixed(2);$('cb').style.width=Math.min(combo,50)*2+'%'},100);
+function ui(){$('coins').textContent=f(S.coins);$('dps').textContent=f(dpsOf())}
+function shop(){let h='<h3>Инструменты</h3>';
+ for(const k of ['power','value','slots']) h+=card(k);
+ h+='<h3>Автоматизация</h3>';for(const k of ['helper','machine']) h+=card(k);
+ h+='<h3>Удача</h3>'+card('luck');$('v1').innerHTML=h}
+$('v1').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;const k=b.dataset.k,c=cost(k);
+ if(S.coins>=c&&S.lv[k]<U[k].max){S.coins-=c;S.lv[k]++;hap('medium');if(k=='slots')fit();ui();shop()}});
+$('v2').addEventListener('click',e=>{if(e.target.id=='pr'&&S.total>=need()){const p=S.prest+1,fd=S.found,t=S.total,pe=S.peeled;S=fresh();S.prest=p;S.found=fd;S.total=t;S.peeled=pe;P=[];fit();ui();farm();toast('Сезон '+p+'! Доход ×'+cm().toFixed(1))}});
+document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=+b.dataset.v;
+ document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x==b));
+ document.querySelectorAll('.view').forEach((v,i)=>v.classList.toggle('on',i==tab));if(tab==1)shop();if(tab==2)farm();if(tab==3)fac();if(tab==4)mapv();hap('light')});
+setInterval(()=>{ui();if(tab==1)shop();if(tab==3)fac()},700);
+function save(){S.t=Date.now();const j=JSON.stringify(S);try{localStorage.setItem('pt',j)}catch(e){}try{tg.CloudStorage.setItem('pt',j)}catch(e){}}
+setInterval(save,4000);addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>document.hidden&&save());
+function offline(){const sec=Math.min((Date.now()-S.t)/1000,7200),d=dpsOf();if(d>0&&sec>30){const n=d*sec/12,g=Math.round(n*vl(S.lv.value)*cm()*.5);S.coins+=g;S.total+=g;toast(`Пока тебя не было: +${f(g)}`)}}
+
+const IC={knife:'<path d="M3 21l9-9"/><path d="M12 12l6-8 3 3-8 6z"/>',coin:'<circle cx="12" cy="12" r="9"/><path d="M14.5 9h-4a1.5 1.5 0 000 3h3a1.5 1.5 0 010 3h-4M12 6.5v11"/>',
+basket:'<path d="M3 10h18l-2 10H5z"/><path d="M8 10l4-6 4 6"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
+clover:'<circle cx="9" cy="9" r="3.5"/><circle cx="15" cy="9" r="3.5"/><circle cx="9" cy="15" r="3.5"/><circle cx="15" cy="15" r="3.5"/>',
+factory:'<path d="M3 21V11l6 4v-4l6 4V5h4v16z"/>',globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+stats:'<path d="M4 20V11M10 20V4M16 20v-7M2 20h20"/>',peel:'<path d="M12 4c5 0 8 3 8 8s-3 8-8 8-8-3-8-8 3-8 8-8z"/><path d="M9 10l1 1M14 13l1 1"/>',
+star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',diamond:'<path d="M6 4h12l4 6-10 11L2 10z"/><path d="M2 10h20"/>',
+rainbow:'<path d="M3 18a9 9 0 0118 0M7 18a5 5 0 0110 0"/>',flame:'<path d="M12 3c1 4 5 6 5 11a5 5 0 01-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-6 1-10z"/>',
+ghost:'<path d="M5 21V11a7 7 0 0114 0v10l-3-2-2 2-2-2-2 2-2-2z"/><circle cx="10" cy="11" r="1"/><circle cx="14" cy="11" r="1"/>',
+planet:'<circle cx="12" cy="12" r="5"/><path d="M3 15c-1-3 5-8 12-10M21 9c1 3-5 8-12 10"/>',chips:'<path d="M5 20l2-14h10l2 14z"/><path d="M8 11h8"/>',
+fries:'<path d="M6 10h12l-2 11H8z"/><path d="M8 10V4M12 10V3M16 10V5"/>',wedge:'<path d="M4 16a8 8 0 0116 0z"/><path d="M8 16l2-5M13 16l1-6"/>',
+box:'<path d="M3 8l9-5 9 5v9l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v9"/>',belt:'<rect x="2" y="11" width="20" height="7" rx="3.5"/><circle cx="7" cy="14.5" r="1"/><circle cx="12" cy="14.5" r="1"/><circle cx="17" cy="14.5" r="1"/>',
+pin:'<path d="M12 21s7-6 7-12a7 7 0 00-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',shop:'<path d="M3 9l2-5h14l2 5M4 9v11h16V9M9 20v-6h6v6"/>'};
+const ic=(n,z=22)=>`<svg width="${z}" height="${z}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[n]||''}</svg>`;
+document.querySelectorAll('[data-ic]').forEach(e=>e.innerHTML=ic(e.dataset.ic));
+const mig=c=>{const d=fresh(),x=Object.assign(d,c);for(const k of['found','ln','lv'])x[k]=Object.assign(fresh()[k],c[k]);return x};S=mig(S);
+const POT='<div class="pot">🥔</div>';
+const COL={n:'#fff',g:'#ffd24a',d:'#7ff0ff',r:'#ff9de2',f:'#ff8a3d',h:'#c9d2ff',c:'#b79cff'};
+function roll(){const x=Math.random(),l=luck();let r='n';for(const[k,v]of[['c',.0003],['h',.001],['f',.0025],['r',.0045],['d',.02],['g',.1]])if(x<v*l){r=k;break}const mx=12*R[r].h;return{r,hp:mx,mx}}
+function draw(){const s=$('slots');s.style.gridTemplateColumns=P.length==1?'1fr':'1fr 1fr';
+ s.innerHTML=P.map((p,i)=>`<div class="slot glass r-${p.r}" data-i="${i}">${POT}<div class="tag">${p.r=='n'?'Картошка':ic(R[p.r].i,15)+R[p.r].t+' ×'+R[p.r].m}</div><div class="bar"><i></i></div></div>`).join('');P.forEach((p,i)=>bar(i))}
+function sparks(x,y,c){for(let i=0;i<12;i++){const d=document.createElement('div'),r=50+Math.random()*60;d.className='sp';d.style.cssText=`left:${x}px;top:${y}px;width:8px;height:8px;border-radius:50%;background:${c};box-shadow:0 0 8px ${c};--x:${Math.cos(i*.52)*r}px;--y:${Math.sin(i*.52)*r}px`;document.body.appendChild(d);setTimeout(()=>d.remove(),900)}}
+function hit(i,dmg,x,y){const p=P[i];if(!p)return;p.hp-=dmg;bar(i);if(p.hp>0)return;
+ const mult=1+Math.min(combo,50)*.02,gain=Math.round(vl(S.lv.value)*R[p.r].m*cm()*mult);
+ S.coins+=gain;S.total+=gain;S.peeled++;S.stock=Math.min(cap(),S.stock+1+Math.floor(R[p.r].m/20));
+ const el=$('slots').children[i],b=el?el.getBoundingClientRect():{left:0,top:0,width:0,height:0};
+ x=x||b.left+b.width/2;y=y||b.top+b.height/2;pop(x,y,'+'+f(gain),COL[p.r]);
+ if(p.r!='n'){S.found[p.r]++;sparks(x,y,COL[p.r]);toast(R[p.r].t+' картошка! +'+f(gain));hap('heavy')}
+ P[i]=roll();draw();ui()}
+const row=(a,i,t,d,c,ok,mx)=>`<div class="card glass"><div class="ico">${ic(i)}</div><div class="tx"><b>${t}</b><div>${d}</div></div><button class="btn ${ok&&!mx?'ok':''}" ${a} ${mx||!ok?'disabled':''}>${mx?'Макс.':ic('coin',14)+f(c)}</button></div>`;
+function card(k){const u=U[k],l=S.lv[k],c=cost(k);return row(`data-k="${k}"`,u.i,`${u.n} · ур. ${l}`,u.d(l),c,S.coins>=c,l>=u.max)}
+const st=(i,t,v)=>`<div class="card glass"><small>${ic(i,15)} ${t}</small><b>${v}</b></div>`;
+const facs=()=>Object.values(S.city).filter(c=>c.f).length,shops=()=>Object.values(S.city).filter(c=>c.s).length;
+const cap=()=>200+S.wh*150,fcost=()=>25000*Math.pow(4,facs()),scost=()=>12000*Math.pow(3,shops());
+const rank=()=>{const n=facs()+shops();return n>=16?'Картофельный магнат':n>=10?'Король картофеля':n>=5?'Промышленник':n>=1?'Заводчик':S.total>=2000?'Фермер':'Огородник'};
+const PR={chips:{n:'Чипсы',i:'chips',v:6,b:3000,g:1.7},fries:{n:'Картошка фри',i:'fries',v:20,b:12000,g:1.75},wedge:{n:'Дольки с травами',i:'wedge',v:70,b:60000,g:1.8},box:{n:'Снек-бокс',i:'box',v:250,b:300000,g:1.85}};
+const UF={belt:{n:'Конвейер',i:'belt',b:8000,g:1.6,d:l=>`Скорость линий +${l*20}% → +${l*20+20}%`},work:{n:'Рабочие',i:'user',b:5000,g:1.55,d:l=>`Подвоз: ${(l*.6).toFixed(1)} → ${(l*.6+.6).toFixed(1)} картошки/с, скорость +10%`},wh:{n:'Склад',i:'box',b:4000,g:1.6,d:l=>`Вместимость ${200+l*150} → ${350+l*150}`}};
+const lcost=k=>Math.floor(PR[k].b*Math.pow(PR[k].g,S.ln[k])),ucost=k=>Math.floor(UF[k].b*Math.pow(UF[k].g,S[k]));
+const CT=[['ny','Нью-Йорк',72,105,.3],['rio','Рио',108,225,.15],['lon','Лондон',148,80,.2],['msk','Минск',188,88,.1],['dxb','Дубай',212,140,.25],['bom','Мумбаи',232,175,.2],['tyo','Токио',268,112,.3],['syd','Сидней',262,228,.15]];
+const cs=id=>S.city[id]||{f:0,s:0},shopB=()=>CT.reduce((a,c)=>a+(cs(c[0]).s?c[4]:0),0);
+let ips=0,sel='msk';
+function prod(dt){const F=facs();if(!F){ips=0;return}
+ S.stock=Math.min(cap(),S.stock+S.work*.6*F*dt);
+ const tm=(1+S.belt*.2)*(1+S.work*.1)*F,pm=cm()*(1+shopB());let g=0;
+ for(const k in PR){const L=S.ln[k];if(!L)continue;const u=Math.min(L*.5*tm*dt,S.stock);S.stock-=u;g+=u*PR[k].v*pm}
+ S.coins+=g;S.total+=g;ips=ips*.95+g/dt*.05}
+setInterval(()=>prod(.1),100);
+function fac(){const F=facs();let h;
+ if(!F){const c=fcost();h=`<div class="card glass"><div class="ico">${ic('factory',30)}</div><div class="tx"><b>Картофельный завод</b><div>Станки превращают очищенную картошку в чипсы, фри и снеки, а конвейеры и рабочие делают всё сами. Заводов можно строить много, смотри вкладку «Карта».</div></div></div><button class="btn ${S.coins>=c?'ok':''}" data-a="home" style="width:100%;padding:14px" ${S.coins>=c?'':'disabled'}>${ic('coin',16)}Построить завод за ${f(c)}</button>`}
+ else{const tm=(1+S.belt*.2)*(1+S.work*.1)*F;
+  h=`<div class="stat">${st('box','Склад',f(S.stock)+' / '+cap())}${st('coin','Доход в сек',f(ips))}${st('factory','Заводов',F)}${st('shop','Магазинов',shops()+' (+'+Math.round(shopB()*100)+'%)')}</div><h3>Производственные линии</h3>`;
+  for(const k in PR){const p=PR[k],l=S.ln[k],c=lcost(k);h+=row(`data-a="l:${k}"`,p.i,`${p.n} · ур. ${l}`,l?`${(l*.5*tm).toFixed(1)} картошки/с, ${p.v} монет за шт.`:`Станок: ${p.v} монет с картошки`,c,S.coins>=c,0)}
+  h+='<h3>Автоматизация</h3>';for(const k in UF){const u=UF[k],c=ucost(k);h+=row(`data-a="b:${k}"`,u.i,`${u.n} · ур. ${S[k]}`,u.d(S[k]),c,S.coins>=c,0)}}
+ $('v3').innerHTML=h}
+$('v3').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+ if(a=='home'){const c=fcost();if(S.coins<c)return;S.coins-=c;S.city.msk=Object.assign({f:0,s:0},S.city.msk,{f:1})}
+ else{const[t,k]=a.split(':'),c=t=='l'?lcost(k):ucost(k);if(S.coins<c)return;S.coins-=c;t=='l'?S.ln[k]++:S[k]++}
+ hap('medium');ui();fac()});
+function mapv(){const F=facs(),n=F+shops(),c=CT.find(x=>x[0]==sel),s=cs(sel);
+ const nodes=CT.map(c=>{const t=cs(c[0]),a=c[0]==sel;return`<g data-c="${c[0]}" class="node"><circle cx="${c[2]}" cy="${c[3]}" r="${a?12:9}" fill="${t.f?'#ffb84d':'#1b1440'}" stroke="${t.s?'#7cf29a':'#fff'}" stroke-width="3"/><circle cx="${c[2]}" cy="${c[3]}" r="18" fill="transparent"/></g>`}).join('');
+ const fc=fcost(),sc=scost();
+ $('v4').innerHTML=`<div class="card glass"><div class="ico">${ic('globe')}</div><div class="tx"><b>${rank()}</b><div>Сеть: ${n} из 16 (заводы и магазины в 8 городах)</div></div></div>
+ <svg viewBox="0 0 320 320" class="planet"><defs><radialGradient id="oc" cx=".35" cy=".3"><stop offset="0" stop-color="#2a8fd6"/><stop offset="1" stop-color="#0b2a66"/></radialGradient><clipPath id="cl"><circle cx="160" cy="160" r="150"/></clipPath></defs>
+ <circle cx="160" cy="160" r="150" fill="url(#oc)"/><g clip-path="url(#cl)" fill="#35a873" opacity=".9"><path d="M50 90q30-30 60-5 10 25-10 45 20 30 5 70-15 25-30 5-15-40-30-60-20-20 5-55z"/><path d="M130 70q40-25 90-10 50 10 60 50-10 30-50 30-30 40-60 20-20-20-30-40-30-10-10-50z"/><path d="M150 170q30-10 40 20 10 40-15 70-25-10-25-50 0-25 0-40z"/><path d="M240 205q25-8 35 10-5 25-35 20-10-15 0-30z"/></g>
+ <circle cx="160" cy="160" r="150" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"/>${nodes}</svg>
+ <div class="card glass" style="margin-top:8px"><div class="ico">${ic('pin')}</div><div class="tx"><b>${c[1]}</b><div>Магазин здесь: +${Math.round(c[4]*100)}% к цене продукции</div></div></div>
+ ${row(`data-b="f:${sel}"`,'factory',s.f?'Завод построен':'Построить завод',s.f?'Мощность производства растёт':'+1 завод: производство растёт',fc,S.coins>=fc,s.f)}
+ ${row(`data-b="s:${sel}"`,'shop',s.s?'Магазин открыт':'Открыть магазин',s.s?'Продаёт продукцию дороже':'Продукция дороже в сети',sc,S.coins>=sc,s.s)}`}
+$('v4').addEventListener('click',e=>{const n=e.target.closest('[data-c]');if(n){sel=n.dataset.c;hap('light');mapv();return}
+ const b=e.target.closest('[data-b]');if(!b)return;const[t,id]=b.dataset.b.split(':'),c=t=='f'?fcost():scost();if(S.coins<c||cs(id)[t])return;
+ S.coins-=c;S.city[id]=Object.assign({f:0,s:0},S.city[id]);S.city[id][t]=1;hap('medium');ui();
+ if(facs()+shops()==16&&!S.won){S.won=1;toast('Вы стали картофельным магнатом!')}mapv()});
+const need=()=>20000*Math.pow(3,S.prest);
+function farm(){const ok=S.total>=need(),q=S.found;
+ $('v2').innerHTML=`<h3>Статистика</h3><div class="stat">${st('peel','Очищено',f(S.peeled))}${st('coin','Заработано',f(S.total))}${st('star','Золотых',q.g)}${st('diamond','Алмазных',q.d)}${st('rainbow','Радужных',q.r)}${st('flame','Огненных',q.f)}${st('ghost','Призрачных',q.h)}${st('planet','Космических',q.c)}</div>
+ <h3>Звание</h3>${st('globe','Твой статус',rank())}
+ <h3>Новый сезон</h3><div class="card glass"><div class="ico">${ic('clover')}</div><div class="tx"><b>Сезон ${S.prest}</b><div>Сброс монет, прокачки и заводов. Навсегда +50% к доходу (сейчас ×${cm().toFixed(1)}). Нужно заработать ${f(need())} за всё время.</div></div></div>
+ <button class="btn ${ok?'ok':''}" id="pr" style="width:100%;padding:14px" ${ok?'':'disabled'}>${ok?'Начать новый сезон':'Ещё не хватает монет'}</button>`}
+offline();fit();ui();
+try{tg.CloudStorage.getItem('pt',(er,v)=>{try{const c=JSON.parse(v);if(c&&c.t>S.t){S=mig(c);fit();ui()}}catch(e){}})}catch(e){}
+</script></body></html>
